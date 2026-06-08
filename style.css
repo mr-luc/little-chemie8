@@ -26,6 +26,9 @@ body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,Segoe UI,sans
 .pill{padding:8px 12px;border-radius:999px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow-sm);font-weight:700;font-size:.95rem}
 .badge{background:linear-gradient(135deg,var(--orange),var(--blue));color:#fff;border:0}
 .coins{background:linear-gradient(135deg,#ffd45f,#f59f00);color:#3d2600;border:0}
+.level{background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;border:0}
+.combo{background:linear-gradient(135deg,#fb7185,#ef4444);color:#fff;border:0;animation:comboPulse 1s ease-in-out infinite}
+@keyframes comboPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
 .progress{height:6px;background:rgba(255,255,255,.6);border-bottom:1px solid var(--line)}
 .progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--orange),var(--blue),var(--green));transition:width .4s}
 
@@ -51,12 +54,15 @@ body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,Segoe UI,sans
 .msg b{color:var(--orange);font-weight:800}
 .msg .chemformula{font-size:.9rem}
 .msg .why{display:block;font-size:.86rem}
+.comboTag{display:inline-block;font-weight:800;color:#ef4444}
 .controls{display:flex;flex-direction:column;gap:8px}
 
 /* ---------- Buttons & Input ---------- */
-button{font:inherit;font-weight:700;border:0;border-radius:13px;cursor:pointer;padding:12px 14px;color:#fff;
-  background:linear-gradient(135deg,var(--orange),var(--blue));box-shadow:var(--shadow-sm);transition:transform .15s,filter .15s}
-button:hover{transform:translateY(-1px);filter:brightness(1.03)}
+button{font:inherit;font-weight:800;border:0;border-radius:16px;cursor:pointer;padding:13px 16px;color:#fff;letter-spacing:.2px;
+  background:linear-gradient(135deg,var(--orange),var(--blue));box-shadow:0 5px 0 rgba(0,0,0,.18),0 8px 16px rgba(49,73,140,.18);
+  transition:transform .08s ease,box-shadow .08s ease,filter .15s}
+button:hover{filter:brightness(1.06)}
+button:active{transform:translateY(4px);box-shadow:0 1px 0 rgba(0,0,0,.18),0 3px 8px rgba(49,73,140,.18)}
 .controls button{width:100%}
 #hint{background:linear-gradient(135deg,#ffd45f,#f59f00);color:#3d2600}
 #reset{background:linear-gradient(135deg,#7a8494,#566173)}
@@ -79,13 +85,14 @@ input::placeholder{color:#a08a76}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px}
 .tabs,.head,.empty{grid-column:1/-1}
 .card{display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;background:var(--card);
-  border:1px solid var(--line);border-radius:18px;padding:14px 9px 12px;box-shadow:var(--shadow-sm);
-  cursor:pointer;transition:transform .16s,box-shadow .16s,border-color .16s;position:relative;overflow:hidden}
-.card:before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:34px;height:5px;
+  border:2px solid var(--line);border-radius:20px;padding:14px 9px 13px;box-shadow:0 4px 0 rgba(80,43,12,.07),var(--shadow-sm);
+  cursor:pointer;transition:transform .14s cubic-bezier(.2,.8,.2,1.25),box-shadow .14s,border-color .14s;position:relative;overflow:hidden}
+.card:before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:40px;height:6px;
   border-radius:0 0 999px 999px;background:var(--accent)}
-.card:hover{transform:translateY(-3px);box-shadow:0 14px 28px rgba(80,43,12,.16);border-color:var(--accent)}
-.card.sel{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 30%,transparent),0 12px 26px rgba(80,43,12,.16)}
-.sym{font-size:2.1rem;margin-top:2px}
+.card:hover{transform:translateY(-5px) scale(1.04);box-shadow:0 16px 30px rgba(80,43,12,.18);border-color:var(--accent)}
+.card:active{transform:translateY(-1px) scale(1)}
+.card.sel{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,transparent),0 12px 26px rgba(80,43,12,.16)}
+.sym{font-size:2.3rem;margin-top:2px}
 .name{font-weight:800;line-height:1.1;font-size:.9rem}
 .info{font-size:.74rem;color:var(--muted);font-weight:500;line-height:1.2}
 .empty{padding:18px;text-align:center;border:1px dashed var(--line);border-radius:16px;background:#fff;color:var(--muted);font-weight:600}
