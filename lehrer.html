@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Little Chemie 8 · Lehrer-Übersicht</title>
+  <style>
+    :root{--ink:#21160f;--muted:#5e5043;--line:#efe1d2;--bg:#fbf4ea;--orange:#ea580c;--blue:#2364d2;--green:#16a34a;--purple:#7c3aed}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:var(--ink);
+      background:radial-gradient(circle at 8% 4%,rgba(255,184,88,.30),transparent 26%),radial-gradient(circle at 92% 6%,rgba(74,130,255,.15),transparent 30%),var(--bg)}
+    header{padding:16px clamp(14px,3vw,28px);background:rgba(255,253,249,.92);border-bottom:1px solid var(--line)}
+    h1{margin:0;font-size:clamp(1.3rem,3.5vw,1.9rem);font-weight:800}
+    header p{margin:5px 0 0;color:var(--muted);font-weight:600;font-size:.9rem}
+    main{max-width:920px;margin:0 auto;padding:20px clamp(12px,2.5vw,24px) 40px}
+    .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+    input{font:inherit;font-weight:600;border:1px solid var(--line);border-radius:13px;padding:11px 13px;background:#fff;color:var(--ink);min-width:200px;flex:1 1 220px}
+    button{font:inherit;font-weight:800;border:0;border-radius:14px;cursor:pointer;padding:11px 16px;color:#fff;
+      background:linear-gradient(135deg,var(--orange),var(--blue));box-shadow:0 4px 0 rgba(0,0,0,.16);transition:transform .08s,box-shadow .08s,filter .15s}
+    button:hover{filter:brightness(1.05)}
+    button:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.16)}
+    label.auto{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.88rem;color:var(--muted)}
+    .status{margin:0 0 12px;font-weight:600;color:var(--muted);min-height:1.2em}
+    .status.err{color:#d94848}
+    .summary{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+    .stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 14px;box-shadow:0 4px 14px rgba(80,43,12,.07)}
+    .stat b{display:block;font-size:1.4rem;font-weight:800}
+    .stat span{font-size:.8rem;color:var(--muted);font-weight:700}
+    .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:16px;background:#fff;box-shadow:0 8px 24px rgba(80,43,12,.08)}
+    table{border-collapse:collapse;width:100%;min-width:560px}
+    th,td{padding:11px 13px;text-align:left;border-bottom:1px solid #f3ece3;white-space:nowrap}
+    th{font-size:.78rem;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);background:#fffaf3}
+    tbody tr:last-child td{border-bottom:0}
+    tbody tr:nth-child(odd){background:#fffdf9}
+    .rank{font-weight:800;color:var(--muted);width:2.5rem}
+    .rank.top{color:var(--orange)}
+    .name{font-weight:800}
+    .lvl{display:inline-block;padding:3px 9px;border-radius:999px;font-weight:800;font-size:.8rem;color:#fff;background:linear-gradient(135deg,var(--purple),var(--blue))}
+    .num{font-weight:700;font-variant-numeric:tabular-nums}
+    .ago{color:var(--muted);font-weight:600;font-size:.85rem}
+    .empty{padding:26px;text-align:center;color:var(--muted);font-weight:600}
+    footer{text-align:center;padding:18px;color:var(--muted);font-weight:600;font-size:.85rem}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🧪 Little Chemie 8 · Lehrer-Übersicht</h1>
+    <p>Fortschritt einer Klasse, sortiert nach XP. Gib den Klassencode ein, mit dem deine Schüler:innen spielen.</p>
+  </header>
+
+  <main>
+    <div class="controls">
+      <input id="code" placeholder="Klassencode (z. B. 8b-chemie)" autocomplete="off">
+      <button id="load">🔄 Laden</button>
+      <label class="auto"><input type="checkbox" id="auto"> Auto (30s)</label>
+    </div>
+    <p id="status" class="status"></p>
+
+    <div id="summary" class="summary" hidden></div>
+    <div id="result"></div>
+  </main>
+
+  <footer>Nur Spieldaten (entdeckte Begriffe, Münzen, XP) · keine Passwörter</footer>
+
+  <script>
+  const TOTAL=48; // Gesamtzahl der Begriffe in DATA (für "x / TOTAL")
+  const $=s=>document.querySelector(s);
+  function levelOf(x){let lvl=1,need=120,acc=0;while(x>=acc+need){acc+=need;lvl++;need=Math.round(need*1.3)}return lvl}
+  function ago(ts){if(!ts)return'–';const s=Math.floor((Date.now()-ts)/1000);if(s<60)return'gerade eben';const m=Math.floor(s/60);if(m<60)return'vor '+m+' Min';const h=Math.floor(m/60);if(h<24)return'vor '+h+' Std';const d=Math.floor(h/24);return'vor '+d+' Tag'+(d>1?'en':'')}
+  function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+  let timer=null;
+  function setStatus(t,err){const el=$('#status');el.textContent=t;el.className='status'+(err?' err':'')}
+
+  async function load(){
+    const code=$('#code').value.trim();
+    if(!code){setStatus('Bitte einen Klassencode eingeben.',true);return}
+    localStorage.setItem('lc8-teacher-code',code);
+    setStatus('Lade …');
+    let data;
+    try{
+      const r=await fetch('api/class?code='+encodeURIComponent(code));
+      if(!r.ok){
+        if(r.status===404)throw new Error('Backend nicht gefunden. Läuft die Seite auf Cloudflare Pages mit aktivierten Functions?');
+        const j=await r.json().catch(()=>({}));
+        throw new Error(j.error==='kv-not-bound'?'KV-Speicher ist nicht gebunden (Binding „PROGRESS" in den Pages-Einstellungen setzen).':'Fehler '+r.status);
+      }
+      data=await r.json();
+    }catch(e){setStatus(e.message||'Netzwerkfehler.',true);render(null);return}
+    setStatus('Stand: '+new Date().toLocaleTimeString('de-DE'));
+    render(data);
+  }
+
+  function render(data){
+    const sum=$('#summary'),res=$('#result');
+    if(!data){sum.hidden=true;res.innerHTML='';return}
+    const st=data.students||[];
+    if(!st.length){sum.hidden=true;res.innerHTML='<div class="tablewrap"><div class="empty">Noch keine Spielstände für diesen Klassencode.</div></div>';return}
+    const totalXp=st.reduce((a,s)=>a+(s.xp||0),0);
+    const avg=Math.round(totalXp/st.length);
+    const best=st[0];
+    sum.hidden=false;
+    sum.innerHTML=
+      `<div class="stat"><b>${st.length}</b><span>Schüler:innen</span></div>`+
+      `<div class="stat"><b>${avg}</b><span>Ø XP</span></div>`+
+      `<div class="stat"><b>Lvl ${levelOf(best.xp||0)}</b><span>Spitze · ${esc(best.name)}</span></div>`;
+    const rows=st.map((s,i)=>{
+      const begriffe=(s.entdeckt||0)+9; // +9 Startbegriffe
+      return `<tr>`+
+        `<td class="rank${i<3?' top':''}">${i+1}.</td>`+
+        `<td class="name">${esc(s.name)}</td>`+
+        `<td><span class="lvl">Lvl ${levelOf(s.xp||0)}</span></td>`+
+        `<td class="num">${begriffe} / ${TOTAL}</td>`+
+        `<td class="num">🪙 ${s.muenzen||0}</td>`+
+        `<td class="num">${s.xp||0}</td>`+
+        `<td class="ago">${ago(s.updated)}</td>`+
+      `</tr>`;
+    }).join('');
+    res.innerHTML=`<div class="tablewrap"><table>`+
+      `<thead><tr><th>#</th><th>Name</th><th>Level</th><th>Begriffe</th><th>Münzen</th><th>XP</th><th>Zuletzt aktiv</th></tr></thead>`+
+      `<tbody>${rows}</tbody></table></div>`;
+  }
+
+  $('#load').onclick=load;
+  $('#code').addEventListener('keydown',e=>{if(e.key==='Enter')load()});
+  $('#auto').addEventListener('change',e=>{clearInterval(timer);if(e.target.checked){timer=setInterval(load,30000);load()}});
+
+  // Klassencode aus URL (?code=) oder letztem Besuch vorbefüllen
+  const urlCode=new URLSearchParams(location.search).get('code');
+  $('#code').value=urlCode||localStorage.getItem('lc8-teacher-code')||'';
+  if($('#code').value)load();
+  </script>
+</body>
+</html>

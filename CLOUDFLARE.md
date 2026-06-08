@@ -41,10 +41,15 @@ wieder.
 
 ## Lehrer-Übersicht
 
-`https://DEINE-PAGES-URL/api/class?code=KLASSENCODE`
+Fertige Seite: **`https://DEINE-PAGES-URL/lehrer.html`** – Klassencode eingeben
+(oder direkt `…/lehrer.html?code=KLASSENCODE` aufrufen). Zeigt alle
+Schüler:innen nach XP sortiert mit Level, entdeckten Begriffen, Münzen, XP und
+„zuletzt aktiv"; optionale Auto-Aktualisierung alle 30 s.
 
-liefert eine nach XP sortierte JSON-Liste aller Schüler:innen der Klasse
-(Name, entdeckte Begriffe, Münzen, XP, letzte Aktualisierung).
+Die rohen Daten liefert auch der Endpoint
+`https://DEINE-PAGES-URL/api/class?code=KLASSENCODE` als JSON.
+
+> Tipp: Den Link zur Lehrer-Seite nicht an die Schüler:innen weitergeben.
 
 ## Datenschutz-Hinweise
 
