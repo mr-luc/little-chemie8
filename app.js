@@ -29,7 +29,20 @@ const SAVE='little-chemie8-save-v4',COINS='little-chemie8-coins-v4',QUIZ_SEEN='l
 const $=s=>document.querySelector(s);const grid=$('#grid'),msg=$('#msg'),A=$('#slotA'),B=$('#slotB'),R=$('#slotR');
 function item(id){return DATA[id]}function icon(id){return item(id)[1]}function name(id){return item(id)[0]}function info(id){return item(id)[2]}
 function load(){try{deck=[...new Set([...START,...JSON.parse(localStorage.getItem(SAVE)||'[]').filter(id=>DATA[id])])];const stored=localStorage.getItem(COINS);coins=stored===null?5:Number(stored);if(!Number.isFinite(coins))coins=5;const sx=localStorage.getItem(XP);xp=sx===null?0:Number(sx);if(!Number.isFinite(xp)||xp<0)xp=0}catch(e){deck=[...START];coins=5;xp=0}combo=0;unlock(false)}
-function save(){localStorage.setItem(SAVE,JSON.stringify(deck.filter(id=>!START.includes(id))));localStorage.setItem(COINS,String(coins));localStorage.setItem(XP,String(xp))}
+function save(){localStorage.setItem(SAVE,JSON.stringify(deck.filter(id=>!START.includes(id))));localStorage.setItem(COINS,String(coins));localStorage.setItem(XP,String(xp));schedulePush()}
+const IDENT='little-chemie8-ident-v1';let cloudOn=false,ident=null,pushTimer=null;
+function currentState(){return{deck:deck.filter(id=>!START.includes(id)),coins,xp}}
+function applyState(s){if(!s||typeof s!=='object')return;deck=[...new Set([...START,...(Array.isArray(s.deck)?s.deck.filter(id=>DATA[id]):[])])];coins=Number.isFinite(s.coins)?s.coins:5;xp=Number.isFinite(s.xp)&&s.xp>=0?s.xp:0;combo=0;save()}
+function getIdent(){try{return JSON.parse(localStorage.getItem(IDENT)||'null')}catch(e){return null}}
+function setIdent(i){ident=i;localStorage.setItem(IDENT,JSON.stringify(i))}
+async function cloudAvailable(){try{const c=new AbortController(),t=setTimeout(()=>c.abort(),2500);const r=await fetch('api/ping',{signal:c.signal});clearTimeout(t);return r.ok}catch(e){return false}}
+async function pull(){if(!ident)return null;try{const r=await fetch('api/progress?code='+encodeURIComponent(ident.code)+'&name='+encodeURIComponent(ident.name));if(!r.ok)return null;return (await r.json()).state}catch(e){return null}}
+async function push(){if(!cloudOn||!ident)return;try{await fetch('api/progress',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:ident.code,name:ident.name,state:currentState()})})}catch(e){}}
+function schedulePush(){if(!cloudOn||!ident)return;clearTimeout(pushTimer);pushTimer=setTimeout(push,800)}
+function setAccountUI(){const a=$('#account');if(!a)return;if(cloudOn&&ident){a.hidden=false;a.textContent='👤 '+ident.name;a.title='Klasse: '+ident.code+' · tippen zum Wechseln';a.onclick=logout}else a.hidden=true}
+function logout(){localStorage.removeItem(IDENT);location.reload()}
+function showLogin(done){const m=$('#login');if(!m){done&&done();return}m.classList.add('show');const submit=()=>{const code=$('#loginCode').value.trim(),nm=$('#loginName').value.trim();if(!code||!nm){$('#loginErr').textContent='Bitte Klassencode und Namen eingeben.';return}setIdent({code,name:nm});m.classList.remove('show');done&&done()};$('#loginBtn').onclick=submit;$('#loginCode').onkeydown=$('#loginName').onkeydown=e=>{if(e.key==='Enter')submit()};setTimeout(()=>{try{$('#loginCode').focus()}catch(e){}},50)}
+async function initCloud(){cloudOn=await cloudAvailable();if(!cloudOn){setAccountUI();return}ident=getIdent();if(!ident)await new Promise(res=>showLogin(res));setAccountUI();const remote=await pull();if(remote&&Array.isArray(remote.deck))applyState(remote);else await push();unlock(true);lastRank=rank();resetSlots();render();toast('☁️ Angemeldet als '+ident.name)}
 function setSlot(el,id,label){el.className='slot'+(id?' on':'');el.innerHTML=id?`${icon(id)}<span>${name(id)}</span><small>${info(id)}</small>`:`❔<span>${label}</span>`}
 function setResult(id,ok){R.className='slot '+(ok?'ok':'bad');R.innerHTML=id?`${icon(id)}<span>${name(id)}</span>`:'✨<span>Ergebnis</span>'}
 function resetSlots(){setSlot(A,null,'1. Begriff');setSlot(B,null,'2. Begriff');setResult(null,true);render()}
@@ -59,4 +72,4 @@ function toast(text){const old=document.querySelector('.toast');if(old)old.remov
 function closeModals(){document.querySelectorAll('.modal').forEach(m=>m.classList.remove('show'))}
 document.addEventListener('click',e=>{if(e.target.matches('[data-close]'))e.target.closest('.modal').classList.remove('show');if(e.target.classList.contains('modal'))e.target.classList.remove('show')});
 $('#hint').onclick=hint;$('#reset').onclick=reset;$('#quiz').onclick=quiz;$('#search').oninput=render;document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModals()});
-load();lastRank=rank();resetSlots();msg.innerHTML='Starte mit <b>9 Grundbegriffen</b>. Neue Missionen erscheinen erst, wenn du den passenden Bereich freischaltest.';
+load();lastRank=rank();resetSlots();msg.innerHTML='Starte mit <b>9 Grundbegriffen</b>. Neue Missionen erscheinen erst, wenn du den passenden Bereich freischaltest.';initCloud();

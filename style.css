@@ -128,6 +128,18 @@ input::placeholder{color:#a08a76}
 .answers button.w{background:#fde2e2;border-color:#d94848}
 .miniStatus{font-weight:800;background:#fff1d4;border-radius:12px;padding:9px;margin:8px 0}
 
+/* ---------- Login / Konto ---------- */
+.account{background:linear-gradient(135deg,#34d399,#0d9488);color:#fff;border:0;cursor:pointer}
+.login-modal{display:none;position:fixed;inset:0;z-index:60;place-items:center;background:rgba(33,22,15,.62);backdrop-filter:blur(8px);padding:16px}
+.login-modal.show{display:grid}
+.login-modal .box{width:min(420px,96vw);text-align:center}
+.login-modal .big{font-size:3.4rem}
+.login-modal h2{margin:.1rem 0 .3rem}
+.login-modal p{color:var(--muted);font-weight:600;font-size:.9rem;line-height:1.4;margin:.2rem 0 1rem}
+.login-modal input{margin-bottom:10px;text-align:center}
+.login-modal .err{color:#d94848;font-weight:700;font-size:.85rem;min-height:1.1em;margin-bottom:6px}
+.login-modal #loginBtn{width:100%}
+
 /* ---------- Effekte-Helfer ---------- */
 .confetti{position:fixed;top:-20px;font-size:1.4rem;z-index:99;animation:fall 1.4s linear forwards;pointer-events:none}
 .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:80;background:#21160f;color:#fff;padding:10px 14px;border-radius:999px;font-weight:700;box-shadow:0 12px 30px #0004;animation:toast 2.2s forwards}
