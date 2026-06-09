@@ -1,10 +1,14 @@
-# Portal „Little Lernspiele" – Bauplan
+# Portal „Little-schoolapp" – Bauplan
+
+Repo: **`mr-luc/Little-schoolapp`** · Cloudflare-Worker-Name: `little-schoolapp`
+KV-Binding `PROGRESS` möglichst auf **denselben** Namespace wie chemie8 legen
+(ID `3d5084f60edb457da08df691b31a0a0d`), dann bleiben Klassen + Lehrer-PIN erhalten.
 
 Ziel: ein zentrales Portal, in dem sich Schüler:innen einmal anmelden und
 automatisch das **von der Lehrkraft zugewiesene Spiel** bekommen. Mehrere Spiele
 teilen sich **einen** Login, **einen** KV-Speicher und **einen** Lehrer-Bereich.
 
-## Verzeichnisstruktur (neues Repo `little-lernspiele`)
+## Verzeichnisstruktur (neues Repo `Little-schoolapp`)
 ```
 /
 ├── index.html              # Portal: Login → Weiterleitung zum zugewiesenen Spiel
@@ -65,7 +69,8 @@ Neu:
    chemie8-Stände ggf. einmal migrieren oder neu starten).
 
 ## So startest du
-1. Neues GitHub-Repo `little-lernspiele` anlegen.
-2. Neue Claude-Code-Session auf dieses Repo (idealerweise **mit Zugriff auch auf
-   `little-chemie8`**, damit Claude die Spiel-Dateien rüberkopieren kann).
-3. Diesen Plan als Auftrag geben: „Baue das Portal laut PORTAL-PLAN.md."
+1. Repo `Little-schoolapp` ist angelegt.
+2. Neue Claude-Code-Session auf **`Little-schoolapp`** starten – **mit Zugriff
+   auch auf `little-chemie8`**, damit Claude die Spiel-Dateien nach
+   `/games/chemie8/` kopieren und diesen Plan lesen kann.
+3. Auftrag geben: „Baue das Portal laut `little-chemie8/PORTAL-PLAN.md`."
