@@ -39,7 +39,7 @@ async function handleApi(request, env, url) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
   const p = url.pathname;
 
-  if (p === '/api/ping') return json({ ok: true, kv: !!env.PROGRESS, teacher: !!teacherPin(env) });
+  if (p === '/api/ping') return json({ ok: true, kv: !!env.PROGRESS, teacher: !!teacherPin(env), keys: Object.keys(env) });
 
   // ---- Schüler-Sync: nur für angelegte Klassencodes ----
   if (p === '/api/progress') {
