@@ -88,9 +88,11 @@
         <h2>➕ Klasse anlegen</h2>
         <div class="controls">
           <input id="newCode" placeholder="Klassencode (z. B. 8b-chemie)" autocomplete="off">
-          <input id="newLabel" placeholder="Bezeichnung (optional, z. B. Klasse 8b)" autocomplete="off">
+          <input id="newLabel" placeholder="Bezeichnung (optional)" autocomplete="off">
+          <input id="newCount" type="number" min="0" max="200" placeholder="Anzahl Schüler" style="max-width:150px">
           <button id="addClass">Anlegen</button>
         </div>
+        <p style="color:#5e5043;font-weight:600;font-size:.85rem;margin:8px 0 0">Die Login-Namen (z. B. „Argon-01") werden automatisch erzeugt und nach dem Anlegen angezeigt.</p>
         <p id="classMsg" class="status"></p>
       </div>
 
@@ -175,7 +177,7 @@
     box.innerHTML=classes.map(c=>
       `<div class="classrow">`+
         `<div class="meta"><div class="label">${esc(c.label||c.code)}</div>`+
-          `<span class="cnt">Code: </span><code>${esc(c.code)}</code> <span class="cnt">· ${c.students} Schüler:in${c.students===1?'':'nen'}</span></div>`+
+          `<span class="cnt">Code: </span><code>${esc(c.code)}</code> <span class="cnt">· ${c.slots} Logins · ${c.students} aktiv</span></div>`+
         `<button class="ghost" data-view="${esc(c.code)}">Anzeigen</button>`+
         `<button class="danger" data-del="${esc(c.code)}">Löschen</button>`+
       `</div>`
@@ -187,15 +189,24 @@
   async function addClass(){
     const code=$('#newCode').value.trim();
     const label=$('#newLabel').value.trim();
+    const count=parseInt($('#newCount').value,10)||0;
     const msg=$('#classMsg');
     if(!code){msg.textContent='Bitte einen Klassencode eingeben.';msg.className='status err';return}
     msg.className='status';msg.textContent='Lege an …';
-    const res=await api('api/teacher/classes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,label})});
+    const res=await api('api/teacher/classes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,label,count})});
     if(res.status===401){return logout()}
     if(!res.ok){msg.textContent='Fehler ('+res.status+').';msg.className='status err';return}
-    $('#newCode').value='';$('#newLabel').value='';
-    msg.textContent='Klasse „'+(label||code)+'" angelegt.';
+    $('#newCode').value='';$('#newLabel').value='';$('#newCount').value='';
+    msg.textContent='Klasse „'+(label||code)+'" angelegt'+(count?(' mit '+count+' Logins'):'')+'.';
     loadClasses();
+    viewClass(res.data.class?res.data.class.code:code);
+  }
+  async function addLogins(code){
+    const n=parseInt($('#moreCount').value,10)||0;
+    if(n<1)return;
+    const res=await api('api/teacher/classes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,count:n})});
+    if(res.status===401){return logout()}
+    loadClasses();viewClass(code);
   }
 
   async function delClass(code){
@@ -206,36 +217,42 @@
     loadClasses();
   }
 
+  function rowFor(n,name,s){
+    if(!s)return '<tr><td class="rank">'+n+'.</td><td class="name">'+esc(name)+'</td><td colspan="5" class="ago">noch nicht gespielt</td></tr>';
+    return '<tr><td class="rank">'+n+'.</td><td class="name">'+esc(name)+'</td>'+
+      '<td><span class="lvl">Lvl '+levelOf(s.xp||0)+'</span></td>'+
+      '<td class="num">'+((s.entdeckt||0)+9)+' / 48</td>'+
+      '<td class="num">🪙 '+(s.muenzen||0)+'</td>'+
+      '<td class="num">'+(s.xp||0)+'</td>'+
+      '<td class="ago">'+ago(s.updated)+'</td></tr>';
+  }
   async function viewClass(code){
     const box=$('#classDetail');
     box.innerHTML='<div class="panel"><div class="empty">Lade …</div></div>';
     const res=await api('api/class?code='+encodeURIComponent(code));
     if(res.status===401){return logout()}
     if(!res.ok){box.innerHTML='<div class="panel"><div class="empty">Fehler ('+res.status+').</div></div>';return}
-    const st=res.data.students||[];
+    const slots=res.data.slots||[], students=res.data.students||[];
+    const map={};students.forEach(s=>{map[(s.name||'').toLowerCase()]=s});
+    const active=students.length, avg=active?Math.round(students.reduce((a,s)=>a+(s.xp||0),0)/active):0;
     let html='<div class="panel"><h2>👥 Klasse: '+esc(code)+'</h2>';
-    if(!st.length){html+='<div class="empty">Noch keine Spielstände in dieser Klasse.</div></div>';box.innerHTML=html;return}
-    const totalXp=st.reduce((a,s)=>a+(s.xp||0),0),avg=Math.round(totalXp/st.length);
-    html+='<div class="summary">'+
-      '<div class="stat"><b>'+st.length+'</b><span>Schüler:innen</span></div>'+
-      '<div class="stat"><b>'+avg+'</b><span>Ø XP</span></div>'+
-      '<div class="stat"><b>Lvl '+levelOf(st[0].xp||0)+'</b><span>Spitze · '+esc(st[0].name)+'</span></div>'+
-    '</div>';
-    html+='<div class="tablewrap"><table><thead><tr><th>#</th><th>Name</th><th>Level</th><th>Begriffe</th><th>Münzen</th><th>XP</th><th>Zuletzt aktiv</th></tr></thead><tbody>';
-    html+=st.map((s,i)=>{
-      const begriffe=(s.entdeckt||0)+9;
-      return '<tr>'+
-        '<td class="rank'+(i<3?' top':'')+'">'+(i+1)+'.</td>'+
-        '<td class="name">'+esc(s.name)+'</td>'+
-        '<td><span class="lvl">Lvl '+levelOf(s.xp||0)+'</span></td>'+
-        '<td class="num">'+begriffe+' / 48</td>'+
-        '<td class="num">🪙 '+(s.muenzen||0)+'</td>'+
-        '<td class="num">'+(s.xp||0)+'</td>'+
-        '<td class="ago">'+ago(s.updated)+'</td>'+
-      '</tr>';
-    }).join('');
-    html+='</tbody></table></div></div>';
+    html+='<div class="controls" style="margin-bottom:10px"><input id="moreCount" type="number" min="1" max="200" placeholder="Anzahl"style="max-width:130px"><button id="addLoginsBtn" class="ghost">+ Logins erzeugen</button></div>';
+    html+='<div class="summary"><div class="stat"><b>'+slots.length+'</b><span>Logins</span></div><div class="stat"><b>'+active+'</b><span>aktiv</span></div><div class="stat"><b>'+avg+'</b><span>Ø XP (aktiv)</span></div></div>';
+    if(!slots.length && !students.length){
+      html+='<div class="empty">Noch keine Logins. Erzeuge oben welche – die Namen erscheinen dann hier.</div></div>';
+      box.innerHTML=html;const b=$('#addLoginsBtn');if(b)b.onclick=()=>addLogins(code);return;
+    }
+    const slotSet={};slots.forEach(n=>slotSet[n.toLowerCase()]=1);
+    const rows=[];
+    if(slots.length){
+      slots.forEach((name,i)=>rows.push(rowFor(i+1,name,map[name.toLowerCase()])));
+      students.filter(s=>!slotSet[(s.name||'').toLowerCase()]).forEach((s,i)=>rows.push(rowFor(slots.length+i+1,s.name,s)));
+    }else{
+      students.slice().sort((a,b)=>b.xp-a.xp).forEach((s,i)=>rows.push(rowFor(i+1,s.name,s)));
+    }
+    html+='<div class="tablewrap"><table><thead><tr><th>#</th><th>Login-Name</th><th>Level</th><th>Begriffe</th><th>Münzen</th><th>XP</th><th>Zuletzt aktiv</th></tr></thead><tbody>'+rows.join('')+'</tbody></table></div></div>';
     box.innerHTML=html;
+    const b=$('#addLoginsBtn');if(b)b.onclick=()=>addLogins(code);
   }
 
   $('#loginBtn').onclick=login;

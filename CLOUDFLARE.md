@@ -38,13 +38,17 @@ Dieses Projekt läuft als **Cloudflare Worker mit statischen Assets**
 Seite: **`https://DEINE-URL/lehrer.html`** – Login **nur mit der Lehrer-PIN**.
 Danach im Bereich:
 
-- **Klassencodes anlegen** (Code + optionale Bezeichnung) und löschen.
-- Pro Klasse die **Schülerliste** ansehen (nach XP sortiert: Level, Begriffe,
-  Münzen, XP, „zuletzt aktiv").
+- **Klasse anlegen:** Klassencode + optionale Bezeichnung + **Anzahl Schüler**.
+  Die **Login-Namen werden automatisch erzeugt** (z. B. `Argon-01`, `Helium-02`)
+  und in der Klassenansicht angezeigt – zum Austeilen/Projizieren.
+- Pro Klasse die **Login-Liste mit Status** ansehen (Level, Begriffe, Münzen,
+  XP, „zuletzt aktiv"; noch nicht gespielte Logins sind markiert) und bei Bedarf
+  **weitere Logins erzeugen**.
 
-**Wichtig:** Schüler:innen können sich im Spiel **nur mit einem hier angelegten
-Klassencode** anmelden. Lege die Klasse also an, bevor die Klasse spielt, und
-gib den Code aus. Unbekannte Codes werden im Spiel abgewiesen.
+**Wichtig:** Schüler:innen melden sich im Spiel mit **Klassencode + zugewiesenem
+Login-Namen** an. Es funktionieren **nur** der angelegte Code **und** die
+erzeugten Namen – freie Namen oder unbekannte Codes werden abgewiesen.
+(Klassen ohne erzeugte Namen bleiben offen, d. h. beliebige Namen erlaubt.)
 
 ### Lehrer-PIN einrichten (einmalig, direkt auf der Seite)
 
