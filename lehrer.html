@@ -51,6 +51,7 @@
   <main>
     <div class="controls">
       <input id="code" placeholder="Klassencode (z. B. 8b-chemie)" autocomplete="off">
+      <input id="pin" type="password" placeholder="Lehrer-PIN" autocomplete="off">
       <button id="load">🔄 Laden</button>
       <label class="auto"><input type="checkbox" id="auto"> Auto (30s)</label>
     </div>
@@ -74,16 +75,21 @@
 
   async function load(){
     const code=$('#code').value.trim();
+    const pin=$('#pin').value;
     if(!code){setStatus('Bitte einen Klassencode eingeben.',true);return}
+    if(!pin){setStatus('Bitte die Lehrer-PIN eingeben.',true);return}
     localStorage.setItem('lc8-teacher-code',code);
+    sessionStorage.setItem('lc8-teacher-pin',pin);
     setStatus('Lade …');
     let data;
     try{
-      const r=await fetch('api/class?code='+encodeURIComponent(code));
+      const r=await fetch('api/class?code='+encodeURIComponent(code),{headers:{'X-Teacher-Pin':pin}});
       if(!r.ok){
-        if(r.status===404)throw new Error('Backend nicht gefunden. Läuft die Seite auf Cloudflare Pages mit aktivierten Functions?');
+        if(r.status===401)throw new Error('Falsche Lehrer-PIN.');
+        if(r.status===503)throw new Error('Lehrer-PIN ist im Worker noch nicht eingerichtet (Secret „TEACHER_PIN" setzen – siehe CLOUDFLARE.md).');
+        if(r.status===404)throw new Error('Backend nicht gefunden. Läuft die Seite auf Cloudflare (Worker)?');
         const j=await r.json().catch(()=>({}));
-        throw new Error(j.error==='kv-not-bound'?'KV-Speicher ist nicht gebunden (Binding „PROGRESS" in den Pages-Einstellungen setzen).':'Fehler '+r.status);
+        throw new Error(j.error==='kv-not-bound'?'KV-Speicher ist nicht gebunden („PROGRESS").':'Fehler '+r.status);
       }
       data=await r.json();
     }catch(e){setStatus(e.message||'Netzwerkfehler.',true);render(null);return}
@@ -122,13 +128,14 @@
   }
 
   $('#load').onclick=load;
-  $('#code').addEventListener('keydown',e=>{if(e.key==='Enter')load()});
+  ['#code','#pin'].forEach(s=>$(s).addEventListener('keydown',e=>{if(e.key==='Enter')load()}));
   $('#auto').addEventListener('change',e=>{clearInterval(timer);if(e.target.checked){timer=setInterval(load,30000);load()}});
 
-  // Klassencode aus URL (?code=) oder letztem Besuch vorbefüllen
+  // Klassencode (URL ?code= oder letzter Besuch) und PIN (nur diese Sitzung) vorbefüllen
   const urlCode=new URLSearchParams(location.search).get('code');
   $('#code').value=urlCode||localStorage.getItem('lc8-teacher-code')||'';
-  if($('#code').value)load();
+  $('#pin').value=sessionStorage.getItem('lc8-teacher-pin')||'';
+  if($('#code').value&&$('#pin').value)load();
   </script>
 </body>
 </html>

@@ -33,14 +33,27 @@ Dieses Projekt läuft als **Cloudflare Worker mit statischen Assets**
 
 3. **Fertig.** Beim Öffnen der `…workers.dev`-URL erscheint der Login.
 
-## Lehrer-Übersicht
+## Lehrer-Übersicht (mit PIN-Schutz)
 
-Seite: **`https://DEINE-URL/lehrer.html`** – Klassencode eingeben
-(oder `…/lehrer.html?code=KLASSENCODE`). Liste aller Schüler:innen nach XP
-sortiert mit Level, Begriffen, Münzen, XP und „zuletzt aktiv"; optionale
-Auto-Aktualisierung. Rohdaten: `…/api/class?code=KLASSENCODE`.
+Seite: **`https://DEINE-URL/lehrer.html`** – Klassencode **und Lehrer-PIN**
+eingeben. Liste aller Schüler:innen nach XP sortiert mit Level, Begriffen,
+Münzen, XP und „zuletzt aktiv"; optionale Auto-Aktualisierung.
 
-> Den Lehrer-Link nicht an die Schüler:innen weitergeben.
+### Lehrer-PIN einrichten (einmalig)
+
+Die PIN wird als **verschlüsseltes Worker-Secret `TEACHER_PIN`** gespeichert –
+**nicht** im Code/Repo. Ohne dieses Secret antwortet `/api/class` mit
+„PIN nicht eingerichtet".
+
+- **Im Dashboard:** Worker → *Settings* → *Variables and Secrets* →
+  *Add variable* → Name `TEACHER_PIN`, Wert = deine Wunsch-PIN,
+  **Type: Secret / Encrypt** → *Save* → einmal neu deployen.
+- **Oder per CLI:** `npx wrangler secret put TEACHER_PIN`
+
+Die PIN gilt für alle Klassencodes (eine Lehr-PIN). Sie wird im Browser nur für
+die laufende Sitzung gemerkt, nicht dauerhaft gespeichert.
+
+> Den Lehrer-Link trotzdem nicht aktiv an die Schüler:innen weitergeben.
 
 ## Lokal testen
 

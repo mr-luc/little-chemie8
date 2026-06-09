@@ -8,7 +8,7 @@
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type,X-Teacher-Pin',
 };
 
 const norm = (s) => String(s || '').trim().toLowerCase().slice(0, 40);
@@ -60,6 +60,9 @@ async function handleApi(request, env, url) {
 
   if (p === '/api/class') {
     if (!env.PROGRESS) return json({ error: 'kv-not-bound' }, 500);
+    if (!env.TEACHER_PIN) return json({ error: 'teacher-pin-not-configured' }, 503);
+    const pin = request.headers.get('X-Teacher-Pin') || url.searchParams.get('pin') || '';
+    if (pin !== env.TEACHER_PIN) return json({ error: 'unauthorized' }, 401);
     const code = norm(url.searchParams.get('code'));
     if (!code) return json({ error: 'bad-params' }, 400);
     const prefix = `st:${encodeURIComponent(code)}:`;
