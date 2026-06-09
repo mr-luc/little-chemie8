@@ -33,11 +33,18 @@ Dieses Projekt läuft als **Cloudflare Worker mit statischen Assets**
 
 3. **Fertig.** Beim Öffnen der `…workers.dev`-URL erscheint der Login.
 
-## Lehrer-Übersicht (mit PIN-Schutz)
+## Lehrer-Bereich
 
-Seite: **`https://DEINE-URL/lehrer.html`** – Klassencode **und Lehrer-PIN**
-eingeben. Liste aller Schüler:innen nach XP sortiert mit Level, Begriffen,
-Münzen, XP und „zuletzt aktiv"; optionale Auto-Aktualisierung.
+Seite: **`https://DEINE-URL/lehrer.html`** – Login **nur mit der Lehrer-PIN**.
+Danach im Bereich:
+
+- **Klassencodes anlegen** (Code + optionale Bezeichnung) und löschen.
+- Pro Klasse die **Schülerliste** ansehen (nach XP sortiert: Level, Begriffe,
+  Münzen, XP, „zuletzt aktiv").
+
+**Wichtig:** Schüler:innen können sich im Spiel **nur mit einem hier angelegten
+Klassencode** anmelden. Lege die Klasse also an, bevor die Klasse spielt, und
+gib den Code aus. Unbekannte Codes werden im Spiel abgewiesen.
 
 ### Lehrer-PIN einrichten (einmalig)
 
