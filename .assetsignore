@@ -1,0 +1,7 @@
+# Diese Dateien NICHT als statische Website ausliefern (Worker-Code & Konfig):
+worker.js
+wrangler.toml
+.assetsignore
+*.md
+.git
+.github

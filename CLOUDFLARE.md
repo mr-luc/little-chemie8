@@ -1,73 +1,57 @@
-# Schüler-Login & Spielstand-Sync (Cloudflare Pages)
+# Schüler-Login & Spielstand-Sync (Cloudflare Worker)
 
-Diese Anleitung beschreibt **Variante B**: Login per **Klassencode + Name** (kein
-Passwort), mit Spielstand-Synchronisierung über Cloudflare. Damit findet jede:r
-Schüler:in den eigenen Stand (entdeckte Begriffe, Münzen, XP) auf jedem Gerät
-wieder.
+**Variante B**: Login per **Klassencode + Name** (kein Passwort) mit
+Spielstand-Synchronisierung. Jede:r findet den eigenen Stand (entdeckte
+Begriffe, Münzen, XP) auf jedem Gerät wieder.
 
-> Wichtig: Auf GitHub Pages (ohne Backend) läuft das Spiel unverändert lokal –
-> der Login erscheint nur dann, wenn die unten beschriebenen Functions verfügbar
-> sind. Die App erkennt das automatisch über `/api/ping`.
+Dieses Projekt läuft als **Cloudflare Worker mit statischen Assets**
+(URL-Form `…workers.dev`):
 
-## Funktionsweise (kurz)
+- `worker.js` – bedient `/api/*` (Login/Sync + Lehrer-Übersicht) und liefert
+  sonst die statischen Dateien aus.
+- `wrangler.toml` – Konfiguration: Worker-Einstieg, Assets-Verzeichnis und die
+  **KV-Bindung `PROGRESS`** (mit deiner Namespace-ID).
+- `.assetsignore` – verhindert, dass Code/Config als Website ausgeliefert wird.
 
-- `functions/api/ping.js` – meldet, dass das Backend da ist (Auto-Erkennung).
-- `functions/api/progress.js` – `GET` lädt, `POST` speichert den Spielstand.
-- `functions/api/class.js` – Übersicht für die Lehrkraft (`/api/class?code=…`).
-- Gespeichert wird in einem **KV-Namespace**, gebunden als `PROGRESS`.
-- Es werden **nur Spieldaten** gespeichert (Begriffe, Münzen, XP) plus der vom
-  Kind gewählte Name – bewusst datensparsam.
+> Hinweis: Auf **GitHub Pages** (ohne Worker/Backend) läuft das Spiel weiterhin
+> rein lokal – der Login erscheint dort nicht (die App erkennt das automatisch
+> über `/api/ping`).
 
-## Einrichtung in Cloudflare
+## Einrichtung
 
-1. **Pages-Projekt anlegen**
-   - Cloudflare Dashboard → *Workers & Pages* → *Create application* → *Pages* →
-     *Connect to Git* → dieses Repository wählen.
-   - Build-Einstellungen: **Framework preset: None**, **Build command: leer**,
-     **Build output directory: `/`** (das Spiel ist statisch). Die `functions/`
-     werden automatisch als Pages Functions deployt.
-
-2. **KV-Namespace erstellen & binden**
-   - *Workers & Pages* → *KV* → *Create a namespace*, z. B. Name
+1. **KV-Namespace** anlegen
+   - Dashboard → *Storage & Databases* → *KV* → **Create** → z. B.
      `little-chemie8`.
-   - Im Pages-Projekt → *Settings* → *Functions* → *KV namespace bindings* →
-     *Add binding*:
-     - **Variable name:** `PROGRESS`
-     - **KV namespace:** den eben erstellten auswählen
-   - Binding für **Production** und **Preview** setzen, dann neu deployen.
+   - Die **Namespace-ID** (lange Hex-Zeichenkette) in `wrangler.toml` unter
+     `[[kv_namespaces]] id = "…"` eintragen. *(Ist bereits gesetzt.)*
 
-3. **Fertig.** Beim Öffnen der Cloudflare-URL erscheint der Login. Code + Name
-   eingeben → Stand wird geladen/angelegt und automatisch gesichert.
+2. **Worker mit dem Repo verbinden** (falls noch nicht geschehen)
+   - Dashboard → *Workers & Pages* → *Create* → *Import a repository* →
+     `mr-luc/little-chemie8`.
+   - Da eine `wrangler.toml` vorhanden ist, wird bei jedem Push auf `main`
+     automatisch `wrangler deploy` ausgeführt – inklusive KV-Bindung und Assets.
+
+3. **Fertig.** Beim Öffnen der `…workers.dev`-URL erscheint der Login.
 
 ## Lehrer-Übersicht
 
-Fertige Seite: **`https://DEINE-PAGES-URL/lehrer.html`** – Klassencode eingeben
-(oder direkt `…/lehrer.html?code=KLASSENCODE` aufrufen). Zeigt alle
-Schüler:innen nach XP sortiert mit Level, entdeckten Begriffen, Münzen, XP und
-„zuletzt aktiv"; optionale Auto-Aktualisierung alle 30 s.
+Seite: **`https://DEINE-URL/lehrer.html`** – Klassencode eingeben
+(oder `…/lehrer.html?code=KLASSENCODE`). Liste aller Schüler:innen nach XP
+sortiert mit Level, Begriffen, Münzen, XP und „zuletzt aktiv"; optionale
+Auto-Aktualisierung. Rohdaten: `…/api/class?code=KLASSENCODE`.
 
-Die rohen Daten liefert auch der Endpoint
-`https://DEINE-PAGES-URL/api/class?code=KLASSENCODE` als JSON.
+> Den Lehrer-Link nicht an die Schüler:innen weitergeben.
 
-> Tipp: Den Link zur Lehrer-Seite nicht an die Schüler:innen weitergeben.
-
-## Datenschutz-Hinweise
-
-- Keine Passwörter, keine E-Mail – nur Klassencode + (frei wählbarer) Name.
-- Empfehlung: **Spitznamen statt Klarnamen** verwenden, dann ist der Stand
-  pseudonym.
-- Wer den Klassencode kennt, kann Stände dieser Klasse lesen/überschreiben.
-  Für den niedrigschwelligen Spieleinsatz ist das ok; für mehr Schutz ließe
-  sich später ein Lehrer-PIN oder Cloudflare Access ergänzen.
-- Vor dem produktiven Einsatz mit der/dem Datenschutzbeauftragten der Schule
-  abstimmen.
-
-## Lokales Testen (optional)
-
-Mit der Cloudflare-CLI `wrangler`:
+## Lokal testen
 
 ```bash
-npx wrangler pages dev . --kv PROGRESS
+npx wrangler dev
 ```
 
-Dann `http://localhost:8788` öffnen – der Login erscheint, KV läuft lokal.
+## Datenschutz
+
+- Keine Passwörter/E-Mail – nur Klassencode + (frei wählbarer) Name.
+- Empfehlung: **Spitznamen** statt Klarnamen → Stand ist pseudonym.
+- Wer den Klassencode kennt, kann Stände dieser Klasse lesen/überschreiben.
+  Für den niedrigschwelligen Einsatz ok; für mehr Schutz später Lehrer-PIN
+  ergänzen. Vor produktivem Einsatz mit der/dem Datenschutzbeauftragten klären.

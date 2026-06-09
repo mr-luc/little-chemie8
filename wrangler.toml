@@ -1,0 +1,16 @@
+# Cloudflare Worker (mit statischen Assets) – Konfiguration für Little Chemie 8
+# Der Projektname muss zum Worker passen (laut URL: little-chemie8.<subdomain>.workers.dev).
+name = "little-chemie8"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+# Statische Dateien (index.html, app.js, style.css, lehrer.html …) aus dem Repo-Root.
+# Der Worker erreicht sie über die Bindung ASSETS; /api/* bedient der Worker selbst.
+[assets]
+directory = "."
+binding = "ASSETS"
+
+# KV-Speicher für die Spielstände. Die ID stammt aus deinem KV-Namespace.
+[[kv_namespaces]]
+binding = "PROGRESS"
+id = "3d5084f60edb457da08df691b31a0a0d"
