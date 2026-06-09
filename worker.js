@@ -23,7 +23,12 @@ const classKey = (c) => `class:${encodeURIComponent(norm(c))}`;
 const json = (obj, status = 200) =>
   new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json', ...CORS } });
 
-const teacherPin = (env) => env.TEACHER_PIN || env.Teacher || env.TEACHER || env.teacher;
+const teacherPinEnv = (env) => env.TEACHER_PIN || env.Teacher || env.TEACHER || env.teacher;
+async function resolvePin(env) {
+  const e = teacherPinEnv(env);
+  if (e) return e;
+  try { return (await env.PROGRESS.get('cfg:teacherpin')) || ''; } catch (e2) { return ''; }
+}
 
 function sanitize(s) {
   if (!s || typeof s !== 'object') return null;
@@ -39,7 +44,27 @@ async function handleApi(request, env, url) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
   const p = url.pathname;
 
-  if (p === '/api/ping') return json({ ok: true, kv: !!env.PROGRESS, teacher: !!teacherPin(env), keys: Object.keys(env) });
+  if (p === '/api/ping') return json({ ok: true, kv: !!env.PROGRESS, teacher: !!(await resolvePin(env)) });
+
+  // Ist eine Lehrer-PIN eingerichtet? (für die Setup-/Login-Entscheidung)
+  if (p === '/api/teacher/status') {
+    return json({ configured: !!(await resolvePin(env)), bySecret: !!teacherPinEnv(env) });
+  }
+  // Lehrer-PIN erstmalig festlegen (oder ändern mit aktueller PIN). Nicht möglich,
+  // wenn die PIN über ein Worker-Secret verwaltet wird.
+  if (p === '/api/teacher/setup') {
+    if (request.method !== 'POST') return json({ error: 'method-not-allowed' }, 405);
+    if (!env.PROGRESS) return json({ error: 'kv-not-bound' }, 500);
+    if (teacherPinEnv(env)) return json({ error: 'managed-by-secret' }, 409);
+    let body;
+    try { body = await request.json(); } catch (e) { return json({ error: 'bad-json' }, 400); }
+    const newPin = String((body && body.pin) || '').trim();
+    if (newPin.length < 4) return json({ error: 'pin-too-short' }, 400);
+    const cur = await env.PROGRESS.get('cfg:teacherpin');
+    if (cur && String((body && body.current) || '') !== cur) return json({ error: 'unauthorized' }, 401);
+    await env.PROGRESS.put('cfg:teacherpin', newPin);
+    return json({ ok: true });
+  }
 
   // ---- Schüler-Sync: nur für angelegte Klassencodes ----
   if (p === '/api/progress') {
@@ -69,7 +94,7 @@ async function handleApi(request, env, url) {
   // ---- Ab hier: Lehrer-Bereich (PIN nötig) ----
   if (p === '/api/teacher/login' || p === '/api/teacher/classes' || p === '/api/class') {
     if (!env.PROGRESS) return json({ error: 'kv-not-bound' }, 500);
-    const tp = teacherPin(env);
+    const tp = await resolvePin(env);
     if (!tp) return json({ error: 'teacher-pin-not-configured' }, 503);
     const pin = request.headers.get('X-Teacher-Pin') || url.searchParams.get('pin') || '';
     if (pin !== tp) return json({ error: 'unauthorized' }, 401);

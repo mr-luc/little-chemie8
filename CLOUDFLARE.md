@@ -46,19 +46,17 @@ Danach im Bereich:
 Klassencode** anmelden. Lege die Klasse also an, bevor die Klasse spielt, und
 gib den Code aus. Unbekannte Codes werden im Spiel abgewiesen.
 
-### Lehrer-PIN einrichten (einmalig)
+### Lehrer-PIN einrichten (einmalig, direkt auf der Seite)
 
-Die PIN wird als **verschlüsseltes Worker-Secret `TEACHER_PIN`** gespeichert –
-**nicht** im Code/Repo. Ohne dieses Secret antwortet `/api/class` mit
-„PIN nicht eingerichtet".
+Beim **ersten** Öffnen von `lehrer.html` erscheint „Lehrer-PIN festlegen" –
+einfach eine PIN (mind. 4 Zeichen) wählen. Sie wird im KV gespeichert
+(`cfg:teacherpin`), kein Dashboard/Terminal nötig. Danach meldest du dich
+immer mit dieser PIN an. Die PIN gilt für alle Klassencodes; im Browser wird
+sie nur für die laufende Sitzung gemerkt.
 
-- **Im Dashboard:** Worker → *Settings* → *Variables and Secrets* →
-  *Add variable* → Name `TEACHER_PIN`, Wert = deine Wunsch-PIN,
-  **Type: Secret / Encrypt** → *Save* → einmal neu deployen.
-- **Oder per CLI:** `npx wrangler secret put TEACHER_PIN`
-
-Die PIN gilt für alle Klassencodes (eine Lehr-PIN). Sie wird im Browser nur für
-die laufende Sitzung gemerkt, nicht dauerhaft gespeichert.
+Optional (für Fortgeschrittene): Wird ein **Worker-Secret** `TEACHER_PIN`
+(oder `Teacher`) gesetzt, hat dieses Vorrang, und die In-App-Einrichtung ist
+deaktiviert.
 
 > Den Lehrer-Link trotzdem nicht aktiv an die Schüler:innen weitergeben.
 

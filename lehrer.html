@@ -71,6 +71,17 @@
       <p id="loginErr" class="err"></p>
     </section>
 
+    <!-- Erst-Einrichtung: PIN festlegen -->
+    <section id="setupView" class="login" hidden>
+      <div class="big">🆕</div>
+      <h2>Lehrer-PIN festlegen</h2>
+      <p style="color:#5e5043;font-weight:600">Beim ersten Mal: Wähle eine PIN (mind. 4 Zeichen). Damit meldest du dich künftig an.</p>
+      <input id="newPin1" type="password" placeholder="Neue PIN" autocomplete="new-password">
+      <input id="newPin2" type="password" placeholder="PIN wiederholen" autocomplete="new-password">
+      <button id="setupBtn">PIN festlegen</button>
+      <p id="setupErr" class="err"></p>
+    </section>
+
     <!-- Dashboard -->
     <section id="dashView" hidden>
       <div class="panel">
@@ -109,14 +120,36 @@
     return {status:r.status,ok:r.ok,data};
   }
 
+  function hideAll(){$('#loginView').hidden=true;$('#setupView').hidden=true;$('#dashView').hidden=true;$('#logout').hidden=true;}
   function showLogin(msg){
-    $('#dashView').hidden=true;$('#logout').hidden=true;$('#loginView').hidden=false;
-    $('#loginErr').textContent=msg||'';
+    hideAll();$('#loginView').hidden=false;$('#loginErr').textContent=msg||'';
     setTimeout(()=>{try{$('#pin').focus()}catch(e){}},50);
   }
+  function showSetup(){
+    hideAll();$('#setupView').hidden=false;
+    setTimeout(()=>{try{$('#newPin1').focus()}catch(e){}},50);
+  }
   function showDash(){
-    $('#loginView').hidden=true;$('#dashView').hidden=false;$('#logout').hidden=false;
+    hideAll();$('#dashView').hidden=false;$('#logout').hidden=false;
     loadClasses();
+  }
+  async function setup(){
+    const a=$('#newPin1').value,b=$('#newPin2').value,e=$('#setupErr');
+    if(a.length<4){e.textContent='Mindestens 4 Zeichen.';return}
+    if(a!==b){e.textContent='Die PINs stimmen nicht überein.';return}
+    e.textContent='Speichere …';
+    let r,d={};
+    try{r=await fetch('api/teacher/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:a})});d=await r.json().catch(()=>({}))}catch(err){e.textContent='Netzwerkfehler.';return}
+    if(r.ok){pin=a;sessionStorage.setItem('lc8-teacher-pin',pin);showDash();return}
+    if(r.status===409){e.textContent='PIN wird über ein Worker-Secret verwaltet – hier nicht änderbar.';return}
+    e.textContent='Fehler ('+(r.status||'Netzwerk')+').';
+  }
+  async function boot(){
+    let st=null;try{const r=await fetch('api/teacher/status');st=await r.json()}catch(e){}
+    if(!st){showLogin('Keine Verbindung zum Server.');return}
+    if(!st.configured){showSetup();return}
+    if(pin){const res=await api('api/teacher/login',{method:'POST'});if(res.ok){showDash();return}pin='';sessionStorage.removeItem('lc8-teacher-pin');}
+    showLogin('');
   }
 
   async function login(){
@@ -207,13 +240,13 @@
 
   $('#loginBtn').onclick=login;
   $('#pin').addEventListener('keydown',e=>{if(e.key==='Enter')login()});
+  $('#setupBtn').onclick=setup;
+  ['#newPin1','#newPin2'].forEach(s=>$(s).addEventListener('keydown',e=>{if(e.key==='Enter')setup()}));
   $('#logout').onclick=logout;
   $('#addClass').onclick=addClass;
   ['#newCode','#newLabel'].forEach(s=>$(s).addEventListener('keydown',e=>{if(e.key==='Enter')addClass()}));
 
-  // Falls PIN aus vorheriger Sitzung vorhanden: direkt versuchen.
-  if(pin){ (async()=>{const res=await api('api/teacher/login',{method:'POST'});if(res.ok)showDash();else{pin='';sessionStorage.removeItem('lc8-teacher-pin');showLogin('')}})(); }
-  else showLogin('');
+  boot();
   </script>
 </body>
 </html>
