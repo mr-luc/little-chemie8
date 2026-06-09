@@ -60,9 +60,10 @@ async function handleApi(request, env, url) {
 
   if (p === '/api/class') {
     if (!env.PROGRESS) return json({ error: 'kv-not-bound' }, 500);
-    if (!env.TEACHER_PIN) return json({ error: 'teacher-pin-not-configured' }, 503);
+    const TPIN = env.TEACHER_PIN || env.Teacher || env.TEACHER || env.teacher;
+    if (!TPIN) return json({ error: 'teacher-pin-not-configured' }, 503);
     const pin = request.headers.get('X-Teacher-Pin') || url.searchParams.get('pin') || '';
-    if (pin !== env.TEACHER_PIN) return json({ error: 'unauthorized' }, 401);
+    if (pin !== TPIN) return json({ error: 'unauthorized' }, 401);
     const code = norm(url.searchParams.get('code'));
     if (!code) return json({ error: 'bad-params' }, 400);
     const prefix = `st:${encodeURIComponent(code)}:`;
