@@ -4,6 +4,10 @@ name = "little-chemie8"
 main = "worker.js"
 compatibility_date = "2024-11-01"
 
+# Im Dashboard gesetzte Variablen/Secrets (z. B. die Lehrer-PIN) bei Deploys
+# NICHT loeschen. Ohne dies wuerde jeder Git-Deploy Klartext-Variablen entfernen.
+keep_vars = true
+
 # Statische Dateien (index.html, app.js, style.css, lehrer.html …) aus dem Repo-Root.
 # Der Worker erreicht sie über die Bindung ASSETS; /api/* bedient der Worker selbst.
 [assets]
