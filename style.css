@@ -40,9 +40,14 @@ body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,Segoe UI,sans
 .bench h2,.missions-rail h2{margin:0;font-size:1.1rem;font-weight:800}
 .content{display:flex;flex-direction:column;gap:12px;min-width:0}
 
-/* ---------- Werkbank ---------- */
-.combo{display:flex;flex-direction:column;gap:6px}
-.combo b{text-align:center;color:var(--orange);font-size:1.3rem;font-weight:800;line-height:1}
+/* ---------- Labortisch ---------- */
+.bench h2{display:flex;align-items:center;gap:8px}
+.worktop{display:flex;flex-direction:column;gap:8px;position:relative;padding:12px 12px 14px;border-radius:16px;
+  background:linear-gradient(180deg,#eef4f5,#e2ecef);border:1px solid #d4e0e3;
+  box-shadow:inset 0 2px 8px rgba(13,148,136,.10),0 2px 0 #cbd8db}
+.worktop:before{content:"";position:absolute;left:10px;right:10px;top:6px;height:3px;border-radius:3px;
+  background:linear-gradient(90deg,transparent,rgba(13,148,136,.35),transparent)}
+.worktop b{text-align:center;color:var(--orange);font-size:1.3rem;font-weight:800;line-height:1}
 .slot{min-height:78px;border:2px dashed var(--line);border-radius:16px;display:grid;place-content:center;
   text-align:center;background:#fffaf3;font-size:2rem;font-weight:800;color:var(--muted);padding:10px}
 .slot span{display:block;color:var(--ink);font-size:.95rem;font-weight:700}
@@ -156,15 +161,15 @@ input::placeholder{color:#a08a76}
   .bench{position:sticky;top:0;z-index:9}
   .missions-rail{position:static;order:3}
   .content{order:2}
-  .combo{flex-direction:row;align-items:stretch}
-  .combo .slot{flex:1}
-  .combo b{display:flex;align-items:center}
+  .worktop{flex-direction:row;align-items:stretch}
+  .worktop .slot{flex:1}
+  .worktop b{display:flex;align-items:center}
   .controls{flex-direction:row;flex-wrap:wrap}
   .controls button{flex:1 1 30%}
 }
 @media(max-width:560px){
   .topbar{flex-direction:column;align-items:flex-start}
-  .combo{flex-direction:column}
+  .worktop{flex-direction:column}
   .grid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr))}
   .tabs{top:0}
 }
